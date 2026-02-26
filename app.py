@@ -24,7 +24,7 @@ def load_model():
     if not os.path.exists(MODEL_PATH):
         with st.spinner("📥 Downloading model... please wait"):
             gdown.download(
-                "https://drive.google.com/uc?id=YOUR_FILE_ID_HERE",
+                "https://drive.google.com/file/d/1LHCa5DKMZvJ8O6lnD78sP3ux5TqH_lsw/view?usp=sharing",
                 MODEL_PATH,
                 quiet=False
             )
