@@ -3,19 +3,40 @@ import numpy as np
 import cv2
 import tensorflow as tf
 from PIL import Image
+import gdown
+import os
 
+# =========================
+# Config
+# =========================
 IMG_SIZE = 224
 CLASS_NAMES = ["No Stroke", "Ischemic", "Hemorrhagic"]
 LAST_CONV_LAYER = "conv5_block16_concat"
+MODEL_PATH = "stroke_densenet_model.keras"
 
 st.title("🧠 Brain Stroke Detection with Grad-CAM")
 
+# =========================
+# Download model from Drive (ONLY if missing)
+# =========================
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("stroke_densenet_model.keras")
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("📥 Downloading model... please wait"):
+            gdown.download(
+                "https://drive.google.com/uc?id=YOUR_FILE_ID_HERE",
+                MODEL_PATH,
+                quiet=False
+            )
+
+    model = tf.keras.models.load_model(MODEL_PATH)
+    return model
 
 model = load_model()
 
+# =========================
+# Grad-CAM
+# =========================
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, class_index):
     grad_model = tf.keras.models.Model(
         inputs=model.input,
@@ -43,16 +64,21 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, class_index):
 
     return heatmap.numpy()
 
+# =========================
+# Upload UI
+# =========================
 uploaded_file = st.file_uploader("Upload CT Image", type=["png","jpg","jpeg"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     orig_img = np.array(image)
 
+    # preprocess
     img = cv2.resize(orig_img, (IMG_SIZE, IMG_SIZE))
     img = tf.keras.applications.densenet.preprocess_input(img)
     img_array = np.expand_dims(img, axis=0)
 
+    # prediction
     preds = model.predict(img_array)
     pred_class = np.argmax(preds[0])
     confidence = np.max(preds[0])
@@ -60,6 +86,7 @@ if uploaded_file is not None:
     st.subheader(f"Prediction: {CLASS_NAMES[pred_class]}")
     st.write(f"Confidence: {confidence:.2%}")
 
+    # Grad-CAM
     heatmap = make_gradcam_heatmap(
         img_array, model, LAST_CONV_LAYER, pred_class
     )
@@ -76,7 +103,7 @@ if uploaded_file is not None:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(orig_img, caption="Original Image")
+        st.image(orig_img, caption="Original Image", use_container_width=True)
 
     with col2:
-        st.image(overlay, caption="Grad-CAM")
+        st.image(overlay, caption="Grad-CAM", use_container_width=True)
