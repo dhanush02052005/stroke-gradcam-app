@@ -26,7 +26,8 @@ def load_model():
             gdown.download(
                 "https://drive.google.com/file/d/1dn_onWhyra3qaIPmJlWwLsBbyFrapsek/view?usp=sharing",
                 MODEL_PATH,
-                quiet=False
+                quiet=False,
+                fuzzy=True
             )
 
     model = tf.keras.models.load_model(MODEL_PATH)
